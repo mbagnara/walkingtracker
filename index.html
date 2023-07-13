@@ -11,9 +11,15 @@
       padding: 8px;
       text-align: left;
       border-bottom: 1px solid #ddd;
+      word-break: break-word;
     }
     th {
       background-color: #f2f2f2;
+    }
+    th:first-child, td:first-child,
+    th:nth-child(2), td:nth-child(2),
+    th:nth-child(3), td:nth-child(3) {
+      max-width: 100px;
     }
   </style>
 </head>
@@ -31,6 +37,7 @@
   <table id="walkTable">
     <thead>
       <tr>
+        <th>Week</th>
         <th>Date</th>
         <th>Miles</th>
         <th>Actions</th>
@@ -64,9 +71,13 @@
 
       // Add the new row to the table
       var newRow = table.insertRow();
+      var weekCell = newRow.insertCell();
       var dateCell = newRow.insertCell();
       var milesCell = newRow.insertCell();
       var actionsCell = newRow.insertCell();
+
+      var weekNumber = getWeekNumber(new Date(dateInput.value));
+      weekCell.textContent = weekNumber;
       dateCell.textContent = dateInput.value;
       milesCell.textContent = milesInput.value;
       actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
@@ -78,8 +89,8 @@
 
     function editRow(button) {
       var row = button.parentNode.parentNode;
-      var dateCell = row.cells[0];
-      var milesCell = row.cells[1];
+      var dateCell = row.cells[1];
+      var milesCell = row.cells[2];
 
       var dateValue = dateCell.textContent;
       var milesValue = milesCell.textContent;
@@ -87,14 +98,14 @@
       dateCell.innerHTML = '<input type="date" value="' + dateValue + '">';
       milesCell.innerHTML = '<input type="number" value="' + milesValue + '">';
 
-      var actionsCell = row.cells[2];
+      var actionsCell = row.cells[3];
       actionsCell.innerHTML = '<button onclick="saveEdit(this)">Save</button> <button onclick="cancelEdit(this)">Cancel</button>';
     }
 
     function saveEdit(button) {
       var row = button.parentNode.parentNode;
-      var dateCell = row.cells[0];
-      var milesCell = row.cells[1];
+      var dateCell = row.cells[1];
+      var milesCell = row.cells[2];
 
       var dateInput = dateCell.querySelector("input[type='date']");
       var milesInput = milesCell.querySelector("input[type='number']");
@@ -109,19 +120,19 @@
       walks[rowIndex].miles = milesInput.value;
       localStorage.setItem("walks", JSON.stringify(walks));
 
-      var actionsCell = row.cells[2];
+      var actionsCell = row.cells[3];
       actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
     }
 
     function cancelEdit(button) {
       var row = button.parentNode.parentNode;
-      var dateCell = row.cells[0];
-      var milesCell = row.cells[1];
+      var dateCell = row.cells[1];
+      var milesCell = row.cells[2];
 
       dateCell.innerHTML = dateCell.querySelector("input[type='date']").value;
       milesCell.innerHTML = milesCell.querySelector("input[type='number']").value;
 
-      var actionsCell = row.cells[2];
+      var actionsCell = row.cells[3];
       actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
     }
 
@@ -147,6 +158,11 @@
       table.innerHTML = "";
     }
 
+    function getWeekNumber(date) {
+      var onejan = new Date(date.getFullYear(), 0, 1);
+      return Math.ceil(((date - onejan) / 86400000 + onejan.getDay() + 1) / 7);
+    }
+
     // Load existing walks from localStorage when the page loads
     document.addEventListener("DOMContentLoaded", function() {
       var walks = JSON.parse(localStorage.getItem("walks")) || [];
@@ -154,9 +170,13 @@
 
       for (var i = 0; i < walks.length; i++) {
         var newRow = table.insertRow();
+        var weekCell = newRow.insertCell();
         var dateCell = newRow.insertCell();
         var milesCell = newRow.insertCell();
         var actionsCell = newRow.insertCell();
+
+        var weekNumber = getWeekNumber(new Date(walks[i].date));
+        weekCell.textContent = weekNumber;
         dateCell.textContent = walks[i].date;
         milesCell.textContent = walks[i].miles;
         actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
