@@ -31,7 +31,6 @@
   <table id="walkTable">
     <thead>
       <tr>
-        <th>Index</th>
         <th>Date</th>
         <th>Miles</th>
         <th>Actions</th>
@@ -49,7 +48,8 @@
       var table = document.getElementById("walkTable").getElementsByTagName('tbody')[0];
 
       if (dateInput.value === "") {
-        dateInput.value = getCurrentDate(); // Suggest the current date if the field is empty
+        alert("Please select a date.");
+        return;
       }
 
       if (milesInput.value <= 0) {
@@ -59,20 +59,17 @@
 
       // Save the new walk data to localStorage
       var walks = JSON.parse(localStorage.getItem("walks")) || [];
-      var rowIndex = walks.length;
       walks.push({ date: dateInput.value, miles: milesInput.value });
       localStorage.setItem("walks", JSON.stringify(walks));
 
       // Add the new row to the table
       var newRow = table.insertRow();
-      var indexCell = newRow.insertCell();
       var dateCell = newRow.insertCell();
       var milesCell = newRow.insertCell();
       var actionsCell = newRow.insertCell();
-      indexCell.textContent = rowIndex;
       dateCell.textContent = dateInput.value;
       milesCell.textContent = milesInput.value;
-      actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this, ' + rowIndex + ')">Delete</button>';
+      actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
 
       // Reset the form inputs
       dateInput.value = "";
@@ -81,8 +78,8 @@
 
     function editRow(button) {
       var row = button.parentNode.parentNode;
-      var dateCell = row.cells[1];
-      var milesCell = row.cells[2];
+      var dateCell = row.cells[0];
+      var milesCell = row.cells[1];
 
       var dateValue = dateCell.textContent;
       var milesValue = milesCell.textContent;
@@ -90,14 +87,14 @@
       dateCell.innerHTML = '<input type="date" value="' + dateValue + '">';
       milesCell.innerHTML = '<input type="number" value="' + milesValue + '">';
 
-      var actionsCell = row.cells[3];
+      var actionsCell = row.cells[2];
       actionsCell.innerHTML = '<button onclick="saveEdit(this)">Save</button> <button onclick="cancelEdit(this)">Cancel</button>';
     }
 
     function saveEdit(button) {
       var row = button.parentNode.parentNode;
-      var dateCell = row.cells[1];
-      var milesCell = row.cells[2];
+      var dateCell = row.cells[0];
+      var milesCell = row.cells[1];
 
       var dateInput = dateCell.querySelector("input[type='date']");
       var milesInput = milesCell.querySelector("input[type='number']");
@@ -106,45 +103,39 @@
       milesCell.textContent = milesInput.value;
 
       // Update the walk data in localStorage
-      var rowIndex = getRowIndex(row);
       var walks = JSON.parse(localStorage.getItem("walks"));
+      var rowIndex = Array.from(table.rows).indexOf(row) - 1;
       walks[rowIndex].date = dateInput.value;
       walks[rowIndex].miles = milesInput.value;
       localStorage.setItem("walks", JSON.stringify(walks));
 
-      var actionsCell = row.cells[3];
-      actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this, ' + rowIndex + ')">Delete</button>';
+      var actionsCell = row.cells[2];
+      actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
     }
 
     function cancelEdit(button) {
       var row = button.parentNode.parentNode;
-      var dateCell = row.cells[1];
-      var milesCell = row.cells[2];
+      var dateCell = row.cells[0];
+      var milesCell = row.cells[1];
 
       dateCell.innerHTML = dateCell.querySelector("input[type='date']").value;
       milesCell.innerHTML = milesCell.querySelector("input[type='number']").value;
 
-      var actionsCell = row.cells[3];
-      actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this, ' + rowIndex + ')">Delete</button>';
+      var actionsCell = row.cells[2];
+      actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
     }
 
-    function deleteRow(button, rowIndex) {
+    function deleteRow(button) {
       var row = button.parentNode.parentNode;
       var table = row.parentNode;
-
-      var confirmation = confirm("Are you sure you want to delete row " + rowIndex + "?");
-      if (!confirmation) {
-        return;
-      }
 
       table.deleteRow(row.rowIndex);
 
       // Remove the walk data from localStorage
       var walks = JSON.parse(localStorage.getItem("walks"));
+      var rowIndex = Array.from(table.rows).indexOf(row) - 1;
       walks.splice(rowIndex, 1);
       localStorage.setItem("walks", JSON.stringify(walks));
-
-      updateRowIndices(); // Update row indices after deletion
     }
 
     function deleteAllData() {
@@ -156,32 +147,6 @@
       table.innerHTML = "";
     }
 
-    function getRowIndex(row) {
-      var rows = document.getElementById("walkTable").getElementsByTagName("tr");
-      for (var i = 0; i < rows.length; i++) {
-        if (rows[i] === row) {
-          return i - 1;
-        }
-      }
-      return -1;
-    }
-
-    function getCurrentDate() {
-      var currentDate = new Date();
-      var year = currentDate.getFullYear();
-      var month = ("0" + (currentDate.getMonth() + 1)).slice(-2);
-      var day = ("0" + currentDate.getDate()).slice(-2);
-      return year + "-" + month + "-" + day;
-    }
-
-    function updateRowIndices() {
-      var rows = document.getElementById("walkTable").getElementsByTagName("tr");
-      for (var i = 1; i < rows.length; i++) {
-        var indexCell = rows[i].cells[0];
-        indexCell.textContent = i - 1;
-      }
-    }
-
     // Load existing walks from localStorage when the page loads
     document.addEventListener("DOMContentLoaded", function() {
       var walks = JSON.parse(localStorage.getItem("walks")) || [];
@@ -189,14 +154,12 @@
 
       for (var i = 0; i < walks.length; i++) {
         var newRow = table.insertRow();
-        var indexCell = newRow.insertCell();
         var dateCell = newRow.insertCell();
         var milesCell = newRow.insertCell();
         var actionsCell = newRow.insertCell();
-        indexCell.textContent = i;
         dateCell.textContent = walks[i].date;
         milesCell.textContent = walks[i].miles;
-        actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this, ' + i + ')">Delete</button>';
+        actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
       }
     });
   </script>
