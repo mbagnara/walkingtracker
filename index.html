@@ -16,10 +16,17 @@
     th {
       background-color: #f2f2f2;
     }
-    th:first-child, td:first-child,
-    th:nth-child(2), td:nth-child(2),
+    th:first-child, td:first-child {
+      width: 50px;
+    }
+    th:nth-child(2), td:nth-child(2) {
+      width: 50px;
+    }
     th:nth-child(3), td:nth-child(3) {
-      max-width: 100px;
+      width: 80px;
+    }
+    th:nth-child(4), td:nth-child(4) {
+      width: 80px;
     }
   </style>
 </head>
@@ -34,13 +41,16 @@
   </form>
   <br>
   <button onclick="deleteAllData()">Delete all data</button>
+  <button onclick="orderByDate()">Order by Date</button>
+  <button onclick="orderByEntry()">Order by Order</button>
   <table id="walkTable">
     <thead>
       <tr>
-        <th>Week</th>
-        <th>Date</th>
-        <th>Miles</th>
-        <th>Actions</th>
+        <th style="width: 50px;">Order</th>
+        <th style="width: 50px;">Week</th>
+        <th style="width: 80px;">Date</th>
+        <th style="width: 80px;">Miles</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -49,6 +59,10 @@
   </table>
 
   <script>
+    var walks = [];
+    var sortByDateAscending = true;
+    var sortByEntryAscending = true;
+
     function addRow() {
       var dateInput = document.getElementById("date");
       var milesInput = document.getElementById("miles");
@@ -65,19 +79,24 @@
       }
 
       // Save the new walk data to localStorage
-      var walks = JSON.parse(localStorage.getItem("walks")) || [];
-      walks.push({ date: dateInput.value, miles: milesInput.value });
+      var newRowData = {
+        index: walks.length + 1,
+        date: dateInput.value,
+        miles: milesInput.value
+      };
+      walks.push(newRowData);
       localStorage.setItem("walks", JSON.stringify(walks));
 
       // Add the new row to the table
       var newRow = table.insertRow();
+      var indexCell = newRow.insertCell();
       var weekCell = newRow.insertCell();
       var dateCell = newRow.insertCell();
       var milesCell = newRow.insertCell();
       var actionsCell = newRow.insertCell();
 
-      var weekNumber = getWeekNumber(new Date(dateInput.value));
-      weekCell.textContent = weekNumber;
+      indexCell.textContent = newRowData.index;
+      weekCell.textContent = getWeekNumber(new Date(dateInput.value));
       dateCell.textContent = dateInput.value;
       milesCell.textContent = milesInput.value;
       actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
@@ -89,23 +108,26 @@
 
     function editRow(button) {
       var row = button.parentNode.parentNode;
-      var dateCell = row.cells[1];
-      var milesCell = row.cells[2];
+      var indexCell = row.cells[0];
+      var dateCell = row.cells[2];
+      var milesCell = row.cells[3];
 
+      var indexValue = indexCell.textContent;
       var dateValue = dateCell.textContent;
       var milesValue = milesCell.textContent;
 
       dateCell.innerHTML = '<input type="date" value="' + dateValue + '">';
       milesCell.innerHTML = '<input type="number" value="' + milesValue + '">';
 
-      var actionsCell = row.cells[3];
+      var actionsCell = row.cells[4];
       actionsCell.innerHTML = '<button onclick="saveEdit(this)">Save</button> <button onclick="cancelEdit(this)">Cancel</button>';
     }
 
     function saveEdit(button) {
       var row = button.parentNode.parentNode;
-      var dateCell = row.cells[1];
-      var milesCell = row.cells[2];
+      var indexCell = row.cells[0];
+      var dateCell = row.cells[2];
+      var milesCell = row.cells[3];
 
       var dateInput = dateCell.querySelector("input[type='date']");
       var milesInput = milesCell.querySelector("input[type='number']");
@@ -114,25 +136,25 @@
       milesCell.textContent = milesInput.value;
 
       // Update the walk data in localStorage
-      var walks = JSON.parse(localStorage.getItem("walks"));
       var rowIndex = Array.from(table.rows).indexOf(row) - 1;
       walks[rowIndex].date = dateInput.value;
       walks[rowIndex].miles = milesInput.value;
       localStorage.setItem("walks", JSON.stringify(walks));
 
-      var actionsCell = row.cells[3];
+      var actionsCell = row.cells[4];
       actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
     }
 
     function cancelEdit(button) {
       var row = button.parentNode.parentNode;
-      var dateCell = row.cells[1];
-      var milesCell = row.cells[2];
+      var indexCell = row.cells[0];
+      var dateCell = row.cells[2];
+      var milesCell = row.cells[3];
 
       dateCell.innerHTML = dateCell.querySelector("input[type='date']").value;
       milesCell.innerHTML = milesCell.querySelector("input[type='number']").value;
 
-      var actionsCell = row.cells[3];
+      var actionsCell = row.cells[4];
       actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
     }
 
@@ -142,8 +164,7 @@
 
       table.deleteRow(row.rowIndex);
 
-      // Remove the walk data from localStorage
-      var walks = JSON.parse(localStorage.getItem("walks"));
+      // Remove the walk data from the walks array
       var rowIndex = Array.from(table.rows).indexOf(row) - 1;
       walks.splice(rowIndex, 1);
       localStorage.setItem("walks", JSON.stringify(walks));
@@ -156,6 +177,59 @@
       // Clear the table body
       var table = document.getElementById("walkTable").getElementsByTagName("tbody")[0];
       table.innerHTML = "";
+
+      // Clear the walks array
+      walks = [];
+    }
+
+    function orderByDate() {
+      if (sortByDateAscending) {
+        walks.sort(function(a, b) {
+          return new Date(a.date) - new Date(b.date);
+        });
+      } else {
+        walks.sort(function(a, b) {
+          return new Date(b.date) - new Date(a.date);
+        });
+      }
+
+      sortByDateAscending = !sortByDateAscending;
+      updateTable();
+    }
+
+    function orderByEntry() {
+      if (sortByEntryAscending) {
+        walks.sort(function(a, b) {
+          return a.index - b.index;
+        });
+      } else {
+        walks.sort(function(a, b) {
+          return b.index - a.index;
+        });
+      }
+
+      sortByEntryAscending = !sortByEntryAscending;
+      updateTable();
+    }
+
+    function updateTable() {
+      var table = document.getElementById("walkTable").getElementsByTagName('tbody')[0];
+      table.innerHTML = "";
+
+      for (var i = 0; i < walks.length; i++) {
+        var newRow = table.insertRow();
+        var indexCell = newRow.insertCell();
+        var weekCell = newRow.insertCell();
+        var dateCell = newRow.insertCell();
+        var milesCell = newRow.insertCell();
+        var actionsCell = newRow.insertCell();
+
+        indexCell.textContent = walks[i].index;
+        weekCell.textContent = getWeekNumber(new Date(walks[i].date));
+        dateCell.textContent = walks[i].date;
+        milesCell.textContent = walks[i].miles;
+        actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
+      }
     }
 
     function getWeekNumber(date) {
@@ -165,22 +239,8 @@
 
     // Load existing walks from localStorage when the page loads
     document.addEventListener("DOMContentLoaded", function() {
-      var walks = JSON.parse(localStorage.getItem("walks")) || [];
-      var table = document.getElementById("walkTable").getElementsByTagName('tbody')[0];
-
-      for (var i = 0; i < walks.length; i++) {
-        var newRow = table.insertRow();
-        var weekCell = newRow.insertCell();
-        var dateCell = newRow.insertCell();
-        var milesCell = newRow.insertCell();
-        var actionsCell = newRow.insertCell();
-
-        var weekNumber = getWeekNumber(new Date(walks[i].date));
-        weekCell.textContent = weekNumber;
-        dateCell.textContent = walks[i].date;
-        milesCell.textContent = walks[i].miles;
-        actionsCell.innerHTML = '<button onclick="editRow(this)">Edit</button> <button onclick="deleteRow(this)">Delete</button>';
-      }
+      walks = JSON.parse(localStorage.getItem("walks")) || [];
+      updateTable();
     });
   </script>
 </body>
