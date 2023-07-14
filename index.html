@@ -29,9 +29,28 @@
       width: 80px;
     }
   </style>
+  <script>
+    var currentZoom = 1;
+
+    function zoomIn() {
+      currentZoom += 0.1;
+      applyZoom();
+    }
+
+    function zoomOut() {
+      currentZoom -= 0.1;
+      applyZoom();
+    }
+
+    function applyZoom() {
+      document.body.style.transform = "scale(" + currentZoom + ")";
+    }
+  </script>
 </head>
 <body>
   <h1>Walk Tracker</h1>
+  <button onclick="zoomIn()">Zoom In</button>
+  <button onclick="zoomOut()">Zoom Out</button>
   <form id="walkForm">
     <label for="date">Date:</label>
     <input type="date" id="date" required>
